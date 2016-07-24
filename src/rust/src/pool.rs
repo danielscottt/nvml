@@ -1,8 +1,10 @@
 extern crate libc;
 
+use std::ptr;
+
 use std::fs::OpenOptions;
 use std::os::unix::io::AsRawFd;
-use std::ptr;
+
 use libc::{c_int, c_void, size_t};
 
 use obj::PmemObj;
@@ -83,16 +85,19 @@ impl PmemPool {
         unsafe { pmem_unmap(self.addr, self.size) };
     }
 
-    pub fn set_root<T>(&self, d: T, size: usize) -> &mut PmemObj<T> {
+    pub fn set_root<T>(&self, d: T, size: usize) {
         let p = PmemObj::new(d, size);
         unsafe {
             let po_ptr = &mut *(self.addr as *mut PmemObj<T>);
             ptr::copy(&p, po_ptr, 1);
         };
-        self.get_root()
     }
 
-    pub fn get_root<T>(&self) -> &mut PmemObj<T> {
+    pub fn get_root<T>(&self) -> &PmemObj<T> {
+        unsafe { &(*(self.addr as *mut PmemObj<T>)) }
+    }
+
+    pub fn get_root_mut<T>(&self) -> &mut PmemObj<T> {
         unsafe { &mut (*(self.addr as *mut PmemObj<T>)) }
     }
 }
